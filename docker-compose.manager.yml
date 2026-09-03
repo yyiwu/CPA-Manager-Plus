@@ -1,9 +1,7 @@
 services:
   cpa-manager-plus:
-    build:
-      context: .
-      dockerfile: Dockerfile.manager-server
-    image: seakee/cpa-manager-plus:latest
+    image: Erii/cpa-manager-plus:v1.12.8
+    pull_policy: never
     restart: unless-stopped
     ports:
       - "18317:18317"

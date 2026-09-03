@@ -35,6 +35,7 @@ import {
   getAuthFileSelectionKey,
   type AuthFilePatchTarget,
 } from '@/features/authFiles/model/credentialStatus';
+import { readAuthFileConcurrency } from '@/features/authFiles/model/authFileConcurrency';
 import {
   clearCodexInspectionDisableOwnership,
   clearCodexInspectionDisableOwnershipForFile,
@@ -92,6 +93,7 @@ export type UseAuthFilesDataResult = {
   batchFieldsUpdating: boolean;
   fileInputRef: RefObject<HTMLInputElement | null>;
   loadFiles: (options?: { throwOnError?: boolean }) => Promise<AuthFileItem[] | undefined>;
+  refreshConcurrency: () => Promise<void>;
   handleUploadClick: () => void;
   handleFileChange: (event: ChangeEvent<HTMLInputElement>) => Promise<void>;
   savePastedAuthJson: (
@@ -751,6 +753,8 @@ export function useAuthFilesData(options: UseAuthFilesDataOptions = {}): UseAuth
   const authJsonPasteOperationRef = useRef<symbol | null>(null);
   const deleteOperationRef = useRef<symbol | null>(null);
   const loadFilesRequestRef = useRef(0);
+  const concurrencyRefreshOperationRef = useRef<symbol | null>(null);
+  const concurrencyViewSupportedRef = useRef<boolean | null>(null);
   const filesRevisionRef = useRef(0);
   const batchStatusPendingRef = useRef<number | null>(null);
   const statusMutationPendingRef = useRef<Map<string, number>>(new Map());
@@ -767,6 +771,8 @@ export function useAuthFilesData(options: UseAuthFilesDataOptions = {}): UseAuth
     connectionFingerprintRef.current = connectionFingerprint;
     authFilesOperationGenerationRef.current += 1;
     loadFilesRequestRef.current += 1;
+    concurrencyRefreshOperationRef.current = null;
+    concurrencyViewSupportedRef.current = null;
     batchStatusPendingRef.current = null;
     statusMutationPendingRef.current.clear();
     batchFieldsPendingRef.current = null;
@@ -791,6 +797,7 @@ export function useAuthFilesData(options: UseAuthFilesDataOptions = {}): UseAuth
     return () => {
       authFilesOperationGenerationRef.current += 1;
       loadFilesRequestRef.current += 1;
+      concurrencyRefreshOperationRef.current = null;
       credentialRefreshGenerationRef.current += 1;
     };
   }, [commitFiles, connectionFingerprint]);
@@ -942,6 +949,11 @@ export function useAuthFilesData(options: UseAuthFilesDataOptions = {}): UseAuth
           return;
         }
         const nextFiles = Array.isArray(data?.files) ? data.files : [];
+        if (nextFiles.some((file) => readAuthFileConcurrency(file) !== null)) {
+          concurrencyViewSupportedRef.current = true;
+        } else if (nextFiles.length > 0) {
+          concurrencyViewSupportedRef.current = false;
+        }
         commitFiles(nextFiles);
         return nextFiles;
       } catch (err: unknown) {
@@ -960,6 +972,61 @@ export function useAuthFilesData(options: UseAuthFilesDataOptions = {}): UseAuth
     },
     [commitFiles, connectionFingerprint, requestScope, t]
   );
+
+  const refreshConcurrency = useCallback(async () => {
+    if (
+      concurrencyViewSupportedRef.current === false ||
+      concurrencyRefreshOperationRef.current !== null
+    ) {
+      return;
+    }
+    const operation = Symbol('auth-files-concurrency-refresh');
+    const requestConnectionFingerprint = connectionFingerprint;
+    const generation = authFilesOperationGenerationRef.current;
+    concurrencyRefreshOperationRef.current = operation;
+    try {
+      const data = requestScope
+        ? await authFilesApi.listConcurrency(requestScope)
+        : await authFilesApi.listConcurrency();
+      if (
+        concurrencyRefreshOperationRef.current !== operation ||
+        authFilesOperationGenerationRef.current !== generation ||
+        connectionFingerprintRef.current !== requestConnectionFingerprint
+      ) {
+        return;
+      }
+      const updates = new Map<string, NonNullable<AuthFileItem['concurrency']>>();
+      (Array.isArray(data?.files) ? data.files : []).forEach((file) => {
+        const concurrency = readAuthFileConcurrency(file);
+        if (concurrency) updates.set(getAuthFileSelectionKey(file), concurrency);
+      });
+      if (updates.size === 0) {
+        if ((data?.files?.length ?? 0) > 0) concurrencyViewSupportedRef.current = false;
+        return;
+      }
+      concurrencyViewSupportedRef.current = true;
+      setFiles((current) => {
+        let changed = false;
+        const next = current.map((file) => {
+          const concurrency = updates.get(getAuthFileSelectionKey(file));
+          if (!concurrency) return file;
+          const previous = readAuthFileConcurrency(file);
+          if (previous?.current === concurrency.current && previous.limit === concurrency.limit) {
+            return file;
+          }
+          changed = true;
+          return { ...file, concurrency };
+        });
+        return changed ? next : current;
+      });
+    } catch {
+      // Passive polling must not replace the primary auth-file error state.
+    } finally {
+      if (concurrencyRefreshOperationRef.current === operation) {
+        concurrencyRefreshOperationRef.current = null;
+      }
+    }
+  }, [connectionFingerprint, requestScope]);
 
   const handleUploadClick = useCallback(() => {
     fileInputRef.current?.click();
@@ -2020,6 +2087,7 @@ export function useAuthFilesData(options: UseAuthFilesDataOptions = {}): UseAuth
     batchFieldsUpdating,
     fileInputRef,
     loadFiles,
+    refreshConcurrency,
     handleUploadClick,
     handleFileChange,
     savePastedAuthJson,

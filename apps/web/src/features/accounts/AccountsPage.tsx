@@ -371,6 +371,7 @@ const MAX_CONCURRENT_QUOTA_REFRESHES_PER_PROVIDER = 1;
 const MAX_CONCURRENT_QUOTA_REFRESH_PROVIDERS = 3;
 const MAX_CONCURRENT_ACCOUNT_HISTORY_REQUESTS = 2;
 const PASSIVE_ACCOUNTS_EVIDENCE_REFRESH_MS = 60_000;
+const ACCOUNT_CONCURRENCY_REFRESH_MS = 2_000;
 const CREDENTIAL_EVIDENCE_UNIQUE_FILE_NAME_BOUNDARY_PREFIX = 'unique-file-name\u0000';
 const CREDENTIAL_EVIDENCE_SOURCE_FILE_BOUNDARY_PREFIX = 'source-file\u0000';
 const CREDENTIAL_EVIDENCE_PROVIDER_BOUNDARY_PREFIX = 'provider\u0000';
@@ -976,6 +977,7 @@ export function AccountsPage() {
     batchFieldsUpdating,
     fileInputRef,
     loadFiles,
+    refreshConcurrency,
     handleUploadClick,
     handleFileChange,
     savePastedAuthJson,
@@ -2009,6 +2011,15 @@ export function AccountsPage() {
       documentVisible &&
       (canLoadHeaderSnapshots || canLoadInspectionSummary)
       ? PASSIVE_ACCOUNTS_EVIDENCE_REFRESH_MS
+      : null
+  );
+
+  useInterval(
+    () => {
+      void refreshConcurrency();
+    },
+    activeView === 'accounts' && documentVisible && files.length > 0
+      ? ACCOUNT_CONCURRENCY_REFRESH_MS
       : null
   );
 
@@ -7075,6 +7086,15 @@ export function AccountsPage() {
                     >
                       {t('accounts.col_priority')} {item.identity.priority}
                     </span>
+                    {row.concurrency ? (
+                      <span
+                        className={styles.accountPriorityMeta}
+                        title={t('accounts.col_concurrency')}
+                      >
+                        {t('accounts.col_concurrency')} {row.concurrency.current}/
+                        {row.concurrency.limit ?? '∞'}
+                      </span>
+                    ) : null}
                   </div>
                 </div>
 

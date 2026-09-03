@@ -414,7 +414,9 @@ export function DashboardPage() {
         ? t('basic_settings.routing_strategy_weighted_round_robin')
         : routingStrategy === 'fill-first'
           ? t('basic_settings.routing_strategy_fill_first')
-          : routingStrategyRaw;
+          : routingStrategy === 'cache-first'
+            ? t('basic_settings.routing_strategy_cache_first')
+            : routingStrategyRaw;
   const routingStrategyBadgeClass = !routingStrategyRaw
     ? styles.configBadgeUnknown
     : routingStrategy === 'round-robin'
@@ -423,7 +425,9 @@ export function DashboardPage() {
         ? styles.configBadgeWeightedRoundRobin
         : routingStrategy === 'fill-first'
           ? styles.configBadgeFillFirst
-          : styles.configBadgeUnknown;
+          : routingStrategy === 'cache-first'
+            ? styles.configBadgeFillFirst
+            : styles.configBadgeUnknown;
 
   const formattedDate = currentTime.toLocaleDateString(i18n.language, {
     weekday: 'long',

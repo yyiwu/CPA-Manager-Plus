@@ -402,7 +402,8 @@
     "routing_strategy_update": "更新",
     "routing_strategy_round_robin": "round-robin（輪詢）",
     "routing_strategy_weighted_round_robin": "weighted-round-robin（加權輪詢）",
-    "routing_strategy_fill_first": "fill-first（優先填充）"
+    "routing_strategy_fill_first": "fill-first（優先填充）",
+    "routing_strategy_cache_first": "cache-first（快取優先）"
   },
   "api_keys": {
     "title": "API 金鑰管理",
@@ -895,6 +896,7 @@
     "col_quota": "額度",
     "col_reset": "恢復時間",
     "col_priority": "優先級",
+    "col_concurrency": "並行",
     "col_created": "建立時間",
     "col_recent": "最近請求",
     "col_actions": "操作",
@@ -1131,6 +1133,8 @@
     "config_section_scheduling": "排程策略",
     "config_weight_label": "權重",
     "config_weight_hint": "僅在加權輪詢策略下生效；留空使用預設權重 1，0 會將此憑證排除於加權排程之外。",
+    "config_concurrency_label": "並行上限",
+    "config_concurrency_hint": "此憑證允許的最大同時請求數；留空或填寫 0 表示不限制。",
     "config_section_provider": "{{provider}} 專屬設定",
     "config_xai_route_mode": "xAI 請求通道",
     "config_xai_route_grok": "Grok Build",
@@ -1157,6 +1161,8 @@
     "config_error_priority_integer": "優先級必須是整數。",
     "config_error_weight_integer": "權重必須是整數。",
     "config_error_weight_range": "權重不可大於 {{max}}。",
+    "config_error_concurrency_integer": "並行上限必須是整數。",
+    "config_error_concurrency_range": "並行上限必須介於 0 與 {{max}} 之間。",
     "config_error_request_retry_integer": "請求重試次數必須是非負整數。",
     "config_error_xai_base_url": "請輸入有效的 HTTP 或 HTTPS Base URL。",
     "config_error_cloak_mode": "Claude 偽裝模式無效。",
@@ -3482,6 +3488,7 @@
           "strategy_round_robin": "輪詢（Round Robin）",
           "strategy_weighted_round_robin": "加權輪詢（Weighted Round Robin）",
           "strategy_fill_first": "填充優先（Fill First）",
+          "strategy_cache_first": "快取優先（Cache First）",
           "session_affinity_ttl": "會話黏性 TTL",
           "force_model_prefix": "強制模型前綴",
           "force_model_prefix_desc": "未帶前綴的模型請求只使用無前綴憑證",

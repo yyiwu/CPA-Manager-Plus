@@ -1100,6 +1100,10 @@ export function VisualConfigEditor({
                         value: 'fill-first',
                         label: t('config_management.visual.sections.network.strategy_fill_first'),
                       },
+                      {
+                        value: 'cache-first',
+                        label: t('config_management.visual.sections.network.strategy_cache_first'),
+                      },
                     ]}
                     id={`${routingStrategyLabelId}-select`}
                     disabled={disabled}

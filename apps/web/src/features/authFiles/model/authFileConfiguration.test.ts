@@ -188,6 +188,23 @@ describe('buildAuthFileConfigurationPatch', () => {
     expect(buildAuthFileConfigurationDraft({ priority: -1 }, 'codex').priority).toBe('-1');
   });
 
+  it('reads and validates a credential concurrency limit', () => {
+    const original = buildAuthFileConfigurationDraft({ max_concurrency: 4 }, 'codex');
+    expect(original.maxConcurrency).toBe('4');
+    expect(
+      buildAuthFileConfigurationPatch({ max_concurrency: 4 }, 'codex', original, {
+        ...original,
+        maxConcurrency: '8',
+      })
+    ).toEqual({ errors: {}, patch: { max_concurrency: 8 } });
+    expect(
+      buildAuthFileConfigurationPatch({ max_concurrency: 4 }, 'codex', original, {
+        ...original,
+        maxConcurrency: '-1',
+      }).errors.maxConcurrency
+    ).toBe('accounts.config_error_concurrency_range');
+  });
+
   it('builds a minimal common patch while preserving explicit zero values', () => {
     const record = {
       type: 'gemini',

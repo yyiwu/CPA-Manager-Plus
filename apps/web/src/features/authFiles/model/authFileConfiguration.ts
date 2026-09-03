@@ -23,6 +23,7 @@ export const AUTH_FILE_CONFIGURATION_INVALID_JSON = 'AUTH_FILE_CONFIGURATION_INV
 export const AUTH_FILE_CONFIGURATION_TARGET_NOT_FOUND = 'AUTH_FILE_CONFIGURATION_TARGET_NOT_FOUND';
 export const XAI_OFFICIAL_API_BASE_URL = 'https://api.x.ai/v1';
 export const AUTH_FILE_WEIGHT_MAX = 1_000_000;
+export const AUTH_FILE_MAX_CONCURRENCY = 1_000_000;
 
 export type XaiRoutingMode = 'grok-build' | 'official-api';
 
@@ -31,6 +32,7 @@ export type AuthFileConfigurationDraft = {
   proxyUrl: string;
   priority: string;
   weight: string;
+  maxConcurrency: string;
   note: string;
   headersText: string;
   excludedModelsText: string;
@@ -53,6 +55,8 @@ export type AuthFileConfigurationErrorKey =
   | 'accounts.config_error_priority_integer'
   | 'accounts.config_error_weight_integer'
   | 'accounts.config_error_weight_range'
+  | 'accounts.config_error_concurrency_integer'
+  | 'accounts.config_error_concurrency_range'
   | 'accounts.config_error_request_retry_integer'
   | 'accounts.config_error_xai_base_url'
   | 'accounts.config_error_cloak_mode';
@@ -344,6 +348,7 @@ export const buildAuthFileConfigurationDraft = (
     proxyUrl: readTrimmedString(record.proxy_url ?? record.proxyUrl ?? record['proxy-url']),
     priority: readPriorityText(record.priority),
     weight: readIntegerText(record.weight),
+    maxConcurrency: readIntegerText(record.max_concurrency ?? record['max-concurrency']),
     note: readTrimmedString(record.note),
     headersText: Object.keys(headers).length > 0 ? JSON.stringify(headers, null, 2) : '',
     excludedModelsText: excludedModels.join('\n'),
@@ -458,6 +463,22 @@ export const buildAuthFileConfigurationPatch = (
         errors.weight = 'accounts.config_error_weight_range';
       } else {
         patch.weight = Math.max(0, value);
+      }
+    }
+  }
+
+  if (draft.maxConcurrency.trim() !== originalDraft.maxConcurrency.trim()) {
+    const trimmed = draft.maxConcurrency.trim();
+    if (!trimmed) {
+      patch.max_concurrency = null;
+    } else {
+      const value = parseInteger(trimmed);
+      if (value === null) {
+        errors.maxConcurrency = 'accounts.config_error_concurrency_integer';
+      } else if (value < 0 || value > AUTH_FILE_MAX_CONCURRENCY) {
+        errors.maxConcurrency = 'accounts.config_error_concurrency_range';
+      } else {
+        patch.max_concurrency = value;
       }
     }
   }

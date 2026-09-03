@@ -11,6 +11,7 @@ import type { AccountRow } from '@/features/accounts/model/accountRows';
 import { getProviderLabel } from '@/features/accounts/model/accountsPagePresentation';
 import type { UseAuthFileConfigurationEditorResult } from '@/features/authFiles/hooks/useAuthFileConfigurationEditor';
 import {
+  AUTH_FILE_MAX_CONCURRENCY,
   AUTH_FILE_WEIGHT_MAX,
   XAI_OFFICIAL_API_BASE_URL,
   getAuthFileConfigurationCapabilities,
@@ -212,6 +213,18 @@ export function AccountConfigurationTab({
             hint={t('accounts.config_weight_hint')}
             disabled={disabled}
             onChange={(event) => editor.updateField('weight', event.target.value)}
+          />
+          <Input
+            label={t('accounts.config_concurrency_label')}
+            type="number"
+            min="0"
+            step="1"
+            max={AUTH_FILE_MAX_CONCURRENCY}
+            value={draft.maxConcurrency}
+            error={fieldError('maxConcurrency', { max: AUTH_FILE_MAX_CONCURRENCY })}
+            hint={t('accounts.config_concurrency_hint')}
+            disabled={disabled}
+            onChange={(event) => editor.updateField('maxConcurrency', event.target.value)}
           />
           <div className={styles.configurationFieldFull}>
             <Input

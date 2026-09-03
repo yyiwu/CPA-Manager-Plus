@@ -563,6 +563,7 @@ vi.mock('@/features/authFiles/hooks/useAuthFilesData', () => ({
       batchFieldsUpdating: mocks.batchFieldsUpdating,
       fileInputRef: { current: null },
       loadFiles: mocks.loadFiles,
+      refreshConcurrency: vi.fn(async () => undefined),
       handleUploadClick: vi.fn(),
       handleFileChange: vi.fn(),
       savePastedAuthJson: vi.fn(async () => 'saved.json'),

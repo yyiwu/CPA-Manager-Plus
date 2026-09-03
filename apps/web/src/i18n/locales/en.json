@@ -404,7 +404,8 @@
     "routing_strategy_update": "Update",
     "routing_strategy_round_robin": "round-robin (cycle)",
     "routing_strategy_weighted_round_robin": "weighted-round-robin (weighted cycle)",
-    "routing_strategy_fill_first": "fill-first (prioritize)"
+    "routing_strategy_fill_first": "fill-first (prioritize)",
+    "routing_strategy_cache_first": "cache-first (maximize cache locality)"
   },
   "api_keys": {
     "title": "API Keys Management",
@@ -897,6 +898,7 @@
     "col_quota": "Quota",
     "col_reset": "Reset",
     "col_priority": "Priority",
+    "col_concurrency": "Concurrency",
     "col_created": "Created",
     "col_recent": "Recent Requests",
     "col_actions": "Actions",
@@ -1133,6 +1135,8 @@
     "config_section_scheduling": "Scheduling policy",
     "config_weight_label": "Weight",
     "config_weight_hint": "Used only by weighted round-robin; empty uses the default weight of 1, while 0 excludes this credential from weighted routing.",
+    "config_concurrency_label": "Concurrency limit",
+    "config_concurrency_hint": "Maximum simultaneous requests for this credential. Empty or 0 means unlimited.",
     "config_section_provider": "{{provider}}-specific settings",
     "config_xai_route_mode": "xAI request channel",
     "config_xai_route_grok": "Grok Build",
@@ -1159,6 +1163,8 @@
     "config_error_priority_integer": "Priority must be an integer.",
     "config_error_weight_integer": "Weight must be an integer.",
     "config_error_weight_range": "Weight cannot exceed {{max}}.",
+    "config_error_concurrency_integer": "Concurrency limit must be an integer.",
+    "config_error_concurrency_range": "Concurrency limit must be between 0 and {{max}}.",
     "config_error_request_retry_integer": "Request retries must be a non-negative integer.",
     "config_error_xai_base_url": "Enter a valid HTTP or HTTPS Base URL.",
     "config_error_cloak_mode": "The Claude cloak mode is invalid.",
@@ -3484,6 +3490,7 @@
           "strategy_round_robin": "Round Robin",
           "strategy_weighted_round_robin": "Weighted Round Robin",
           "strategy_fill_first": "Fill First",
+          "strategy_cache_first": "Cache First",
           "session_affinity_ttl": "Session Affinity TTL",
           "force_model_prefix": "Force Model Prefix",
           "force_model_prefix_desc": "Unprefixed model requests only use credentials without prefix",
