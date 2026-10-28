@@ -135,8 +135,8 @@ func rootHandler(
 			middleware.WithCORS(appCtx.Config, proxyHandler.CPAResource)(w, r)
 			return
 		}
-		if proxysvc.IsCPAV8APIKeysConfigPath(r.URL.Path) {
-			middleware.WithCORS(appCtx.Config, proxyHandler.V8APIKeysConfig)(w, r)
+		if proxysvc.IsCPAV8ManagementProxyPath(r.URL.Path) {
+			middleware.WithCORS(appCtx.Config, proxyHandler.V8Management)(w, r)
 			return
 		}
 		if r.URL.Path == "/" {

@@ -21,6 +21,11 @@ export type AuthFileType =
   | 'empty'
   | 'unknown';
 
+export interface AuthFileConcurrency {
+  current: number;
+  limit: number | null;
+}
+
 export interface AuthFileItem {
   id?: string;
   name: string;
@@ -31,6 +36,9 @@ export interface AuthFileItem {
   runtimeOnly?: boolean | string;
   disabled?: boolean;
   weight?: number;
+  max_concurrency?: number;
+  maxConcurrency?: number;
+  concurrency?: AuthFileConcurrency;
   unavailable?: boolean;
   status?: string;
   statusMessage?: string;

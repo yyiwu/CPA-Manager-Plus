@@ -1,4 +1,8 @@
-export type RoutingStrategy = 'round-robin' | 'weighted-round-robin' | 'fill-first';
+export type RoutingStrategy =
+  | 'round-robin'
+  | 'weighted-round-robin'
+  | 'fill-first'
+  | 'cache-first';
 
 export const normalizeRoutingStrategy = (value: unknown): RoutingStrategy | undefined => {
   const normalized = String(value ?? '')
@@ -10,5 +14,6 @@ export const normalizeRoutingStrategy = (value: unknown): RoutingStrategy | unde
     return 'weighted-round-robin';
   }
   if (['fill-first', 'fillfirst', 'ff'].includes(normalized)) return 'fill-first';
+  if (['cache-first', 'cachefirst', 'cf'].includes(normalized)) return 'cache-first';
   return undefined;
 };

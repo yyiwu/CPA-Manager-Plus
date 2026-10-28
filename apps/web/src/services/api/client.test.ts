@@ -94,12 +94,14 @@ describe('ApiClient request scoping', () => {
         apiBase: 'http://old-cpa.local:8317',
         managementKey: 'old-cpa-key',
       }) as RequestConfig),
-      url: '/oauth-model-alias',
+      url: '/v8/management/credentials?view=concurrency',
     });
     const currentConfig = applyRequestInterceptor({
-      url: '/oauth-model-alias',
+      url: '/v8/management/credentials?view=concurrency',
       headers: {},
     });
+    expect(staleConfig.baseURL).toBe('http://old-cpa.local:8317');
+    expect(currentConfig.baseURL).toBe('http://new-cpa.local:8317');
     const createUnauthorizedError = (config: RequestConfig) => ({
       isAxiosError: true,
       message: 'unauthorized',

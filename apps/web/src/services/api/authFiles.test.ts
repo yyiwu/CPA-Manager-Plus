@@ -1351,6 +1351,7 @@ describe('authFilesApi patchFieldsForAuthIndexes', () => {
     await authFilesApi.patchFieldsForAuthIndexes('shared-codex.json', targets, sourceIdentities, {
       priority: 10,
       weight: 0,
+      max_concurrency: 2,
       websockets: false,
     });
 
@@ -1373,8 +1374,22 @@ describe('authFilesApi patchFieldsForAuthIndexes', () => {
     expect(file.name).toBe('shared-codex.json');
     await expect(file.text()).resolves.toBe(
       JSON.stringify([
-        { type: 'codex', authIndex: 0, priority: 10, weight: 0, websockets: false },
-        { type: 'codex', auth_index: 'auth-2', priority: 10, weight: 0, websockets: false },
+        {
+          type: 'codex',
+          authIndex: 0,
+          priority: 10,
+          weight: 0,
+          max_concurrency: 2,
+          websockets: false,
+        },
+        {
+          type: 'codex',
+          auth_index: 'auth-2',
+          priority: 10,
+          weight: 0,
+          max_concurrency: 2,
+          websockets: false,
+        },
         { type: 'codex', authIndex: 'auth-3', priority: 3, weight: 6, websocket: true },
       ])
     );

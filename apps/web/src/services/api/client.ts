@@ -12,7 +12,7 @@ import {
   REQUEST_TIMEOUT_MS,
   VERSION_HEADER_KEYS,
 } from '@/utils/constants';
-import { computeApiUrl } from '@/utils/connection';
+import { computeApiUrl, normalizeApiBase } from '@/utils/connection';
 import {
   handleDemoApiRequest,
   handleDemoFormRequest,
@@ -37,6 +37,8 @@ export const createScopedApiRequestConfig = (
     : {},
   cpampScopedRequest: true,
 });
+
+const usesV8ManagementPath = (url?: string): boolean => url?.startsWith('/v8/management/') === true;
 
 class ApiClient {
   private instance: AxiosInstance;
@@ -121,6 +123,9 @@ class ApiClient {
 
   private requestTargetsCurrentConfig(config?: AxiosRequestConfig): boolean {
     const requestBase = String(config?.baseURL ?? '').replace(/\/+$/, '');
+    const currentBase = usesV8ManagementPath(config?.url)
+      ? normalizeApiBase(this.apiBase)
+      : this.apiBase;
     const requestAuthorization = this.readHeader(
       config?.headers as Record<string, unknown> | undefined,
       ['Authorization']
@@ -128,7 +133,7 @@ class ApiClient {
     const currentAuthorization = this.managementKey ? `Bearer ${this.managementKey}` : '';
 
     return (
-      requestBase === this.apiBase.replace(/\/+$/, '') &&
+      requestBase === currentBase.replace(/\/+$/, '') &&
       (requestAuthorization ?? '') === currentAuthorization
     );
   }
@@ -145,6 +150,9 @@ class ApiClient {
         // operation began. Regular requests continue to use the current global config.
         if (!scopedRequest) {
           config.baseURL = this.apiBase;
+        }
+        if (usesV8ManagementPath(config.url)) {
+          config.baseURL = normalizeApiBase(config.baseURL ?? '');
         }
         if (config.url) {
           // Normalize deprecated Gemini endpoint to the current path.

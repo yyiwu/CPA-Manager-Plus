@@ -1520,6 +1520,39 @@ func TestServerCompatV8APIKeysConfigProxy(t *testing.T) {
 	}
 }
 
+func TestServerCompatV8CredentialConcurrencyProxy(t *testing.T) {
+	cpa := testutil.NewCPAMock(t)
+	setup := &store.Setup{CPAUpstreamURL: cpa.URL(), ManagementKey: "management-key", Queue: "usage", PopSide: "right"}
+	handler, _ := newCompatHandler(t, testutil.NewConfig(t), setup)
+	const listPath = "/v8/management/" + "credentials"
+	const fieldsPath = listPath + "/fields"
+	const patchBody = `{"name":"codex.json","max_concurrency":3}`
+
+	for _, tc := range []struct {
+		method string
+		path   string
+		query  string
+		body   string
+	}{
+		{method: http.MethodGet, path: listPath, query: "?view=concurrency"},
+		{method: http.MethodPatch, path: fieldsPath, body: patchBody},
+	} {
+		rr := testutil.Request(t, handler, tc.method, tc.path+tc.query, tc.body, testutil.AdminKey)
+		testutil.RequireStatus(t, rr, http.StatusOK)
+		got, ok := cpa.LastRequest(tc.path)
+		if !ok || got.Method != tc.method || got.Authorization != "Bearer management-key" || got.Query != strings.TrimPrefix(tc.query, "?") {
+			t.Fatalf("forward %s %s: %#v", tc.method, tc.path, got)
+		}
+	}
+	before := len(cpa.Requests())
+	testutil.RequireStatus(t, testutil.Request(t, handler, http.MethodGet, listPath, "", testutil.AdminKey), http.StatusNotFound)
+	testutil.RequireStatus(t, testutil.Request(t, handler, http.MethodGet, fieldsPath, "", testutil.AdminKey), http.StatusMethodNotAllowed)
+	testutil.RequireStatus(t, testutil.Request(t, handler, http.MethodPatch, fieldsPath, patchBody, "wrong-key"), http.StatusUnauthorized)
+	if len(cpa.Requests()) != before {
+		t.Fatal("disallowed v8 request reached CPA")
+	}
+}
+
 func TestServerCompatPluginProxyRoutes(t *testing.T) {
 	type observedRequest struct {
 		method            string

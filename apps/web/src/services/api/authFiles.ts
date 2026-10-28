@@ -63,6 +63,8 @@ export type AuthFileFieldsPatch = {
   headers?: Record<string, string>;
   priority?: number;
   weight?: number | null;
+  max_concurrency?: number | null;
+  'max-concurrency'?: null;
   note?: string;
   'excluded-models'?: string[] | null;
   excluded_models?: string[] | null;
@@ -727,6 +729,16 @@ export const applyAuthFileFieldsPatchToRecord = (
     }
   }
 
+  if (fields.max_concurrency !== undefined) {
+    if (fields.max_concurrency === null) {
+      delete next.max_concurrency;
+    } else {
+      next.max_concurrency = fields.max_concurrency;
+    }
+    delete next['max-concurrency'];
+  }
+  if (fields['max-concurrency'] === null) delete next['max-concurrency'];
+
   if (fields.note !== undefined) {
     const value = fields.note.trim();
     if (value) {
@@ -1197,6 +1209,14 @@ export const authFilesApi = {
     });
   },
 
+  listConcurrency: async (requestScope?: AuthFilesApiRequestScope) => {
+    const path = '/v8/management/credentials?view=concurrency';
+    const response = requestScope
+      ? await apiClient.get<AuthFilesResponse>(path, createScopedApiRequestConfig(requestScope))
+      : await apiClient.get<AuthFilesResponse>(path);
+    return dedupeAuthFilesResponse(response);
+  },
+
   setStatus: (
     target: AuthFileStatusTarget,
     disabled: boolean,
@@ -1285,7 +1305,9 @@ export const authFilesApi = {
     ]);
     const scopedRequestConfig = requestScope ? createScopedApiRequestConfig(requestScope) : null;
     return apiClient.patch(
-      '/auth-files/fields',
+      fields.max_concurrency !== undefined || fields['max-concurrency'] !== undefined
+        ? '/v8/management/credentials/fields'
+        : '/auth-files/fields',
       { name: selector, ...fields },
       scopedRequestConfig
         ? {
