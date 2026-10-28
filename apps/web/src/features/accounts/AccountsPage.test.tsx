@@ -659,6 +659,7 @@ vi.mock('@/features/authFiles/hooks/useAuthFilesData', () => ({
       batchFieldsUpdating: mocks.batchFieldsUpdating,
       fileInputRef: { current: null },
       loadFiles: mocks.loadFiles,
+      refreshConcurrency: vi.fn(async () => undefined),
       handleUploadClick: vi.fn(),
       handleFileChange: vi.fn(),
       savePastedAuthJson: vi.fn(async () => 'saved.json'),
@@ -1473,6 +1474,20 @@ describe('AccountsPage replacement flows', () => {
     mocks.lastCodexReauthProps = null;
     mocks.lastHealthWorkspaceProps = null;
     mocks.localInspection = null;
+  });
+
+  it.each(['table', 'grid'])('shows credential concurrency in %s layout', async (layout) => {
+    mocks.location = { pathname: '/accounts', search: `?layout=${layout}` };
+    mocks.files[0].concurrency = { current: 2, limit: null };
+    const renderer = await renderAccountsPage();
+    const readConcurrency = () =>
+      renderer.root.findByProps({ title: 'accounts.col_concurrency' }).children.join('');
+    expect(readConcurrency()).toBe('accounts.col_concurrency 2/∞');
+    mocks.files = [{ ...mocks.files[0], concurrency: { current: 1, limit: 3 } }];
+    await act(async () => {
+      renderer.update(<AccountsPage />);
+    });
+    expect(readConcurrency()).toBe('accounts.col_concurrency 1/3');
   });
 
   it('keeps credential cards mounted during a refresh with existing files', async () => {

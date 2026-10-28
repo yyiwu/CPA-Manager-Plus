@@ -63,6 +63,8 @@ export type AuthFileFieldsPatch = {
   headers?: Record<string, string>;
   priority?: number;
   weight?: number | null;
+  max_concurrency?: number | null;
+  'max-concurrency'?: null;
   note?: string;
   'excluded-models'?: string[] | null;
   excluded_models?: string[] | null;
@@ -1195,6 +1197,16 @@ export const authFilesApi = {
       name,
       ...(authIndex ? { authIndex } : {}),
     });
+  },
+
+  listConcurrency: async (requestScope?: AuthFilesApiRequestScope) => {
+    const response = requestScope
+      ? await apiClient.get<AuthFilesResponse>(
+          '/auth-files?view=concurrency',
+          createScopedApiRequestConfig(requestScope)
+        )
+      : await apiClient.get<AuthFilesResponse>('/auth-files?view=concurrency');
+    return dedupeAuthFilesResponse(response);
   },
 
   setStatus: (

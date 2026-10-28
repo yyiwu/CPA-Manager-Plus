@@ -17,6 +17,7 @@ import {
   hasActiveCodexInspectionAuthenticationFailure,
   type AuthFileCodexStatusSummary,
 } from '@/features/authFiles/model/credentialStatus';
+import { readAuthFileConcurrency } from '@/features/authFiles/model/authFileConcurrency';
 import {
   compareQuotaResetLabels,
   compareQuotaResets,
@@ -192,6 +193,7 @@ export interface AccountRow {
   projectId: string;
   note?: string;
   priority: number | null;
+  concurrency?: { current: number; limit: number | null } | null;
   createdAtMs: number | null;
   updatedAtMs: number | null;
   subscriptionUntilMs: number | null;
@@ -527,6 +529,7 @@ export const buildAccountRows = (
       projectId: readProjectId(file),
       note: readString(file.note),
       priority: readNumber(file.priority),
+      concurrency: readAuthFileConcurrency(file),
       createdAtMs: readAuthFileCreatedAtMs(file),
       updatedAtMs,
       subscriptionUntilMs,

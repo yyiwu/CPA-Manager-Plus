@@ -13,6 +13,7 @@ const { mocks } = vi.hoisted(() => {
   return {
     mocks: {
       list: vi.fn(),
+      listConcurrency: vi.fn(),
       lookup: vi.fn(),
       saveJsonObject: vi.fn(),
       uploadFiles: vi.fn(),
@@ -74,6 +75,7 @@ vi.mock('@/stores', () => ({
 vi.mock('@/services/api', () => ({
   authFilesApi: {
     list: mocks.list,
+    listConcurrency: mocks.listConcurrency,
     lookup: mocks.lookup,
     saveJsonObject: mocks.saveJsonObject,
     uploadFiles: mocks.uploadFiles,
@@ -218,6 +220,7 @@ const mountUseAuthFilesData = (
 
 beforeEach(() => {
   mocks.list.mockReset();
+  mocks.listConcurrency.mockReset();
   mocks.lookup.mockReset();
   mocks.saveJsonObject.mockReset();
   mocks.uploadFiles.mockReset();
@@ -252,6 +255,53 @@ afterEach(() => {
 });
 
 describe('useAuthFilesData revalidation', () => {
+  it('merges only concurrency and ignores results from a previous connection', async () => {
+    const file: AuthFileItem = {
+      name: 'limited.json',
+      auth_index: 'a',
+      disabled: false,
+      concurrency: { current: 0, limit: 3 },
+    };
+    mocks.list.mockResolvedValue({ files: [file] });
+    const hook = mountUseAuthFilesData('a');
+    await act(async () => {
+      await hook.getCurrent().loadFiles();
+    });
+    mocks.listConcurrency.mockResolvedValue({
+      files: [{ ...file, disabled: true, concurrency: { current: 2, limit: 3 } }],
+    });
+    await act(async () => {
+      await hook.getCurrent().refreshConcurrency();
+    });
+    expect(hook.getCurrent().files).toEqual([{ ...file, concurrency: { current: 2, limit: 3 } }]);
+    const stale = createDeferred<{ files: AuthFileItem[] }>();
+    mocks.listConcurrency.mockReturnValueOnce(stale.promise);
+    let pending!: Promise<void>;
+    act(() => {
+      pending = hook.getCurrent().refreshConcurrency();
+    });
+    hook.rerender('b');
+    await act(async () => {
+      stale.resolve({ files: [{ ...file, concurrency: { current: 3, limit: 3 } }] });
+      await pending;
+    });
+    expect(hook.getCurrent().files).toEqual([]);
+    hook.unmount();
+  });
+
+  it('does not poll concurrency on older backends', async () => {
+    mocks.list.mockResolvedValue({ files: [{ name: 'legacy.json' }] });
+    const hook = mountUseAuthFilesData();
+    await act(async () => {
+      await hook.getCurrent().loadFiles();
+    });
+    await act(async () => {
+      await hook.getCurrent().refreshConcurrency();
+    });
+    expect(mocks.listConcurrency).not.toHaveBeenCalled();
+    hook.unmount();
+  });
+
   it('keeps successful data and selection through pending, successful and failed refreshes', async () => {
     const hook = mountUseAuthFilesData('a');
     expect(hook.getCurrent().initialLoading).toBe(true);

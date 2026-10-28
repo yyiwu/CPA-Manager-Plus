@@ -41,6 +41,7 @@ const makeDraft = (
   proxyUrl: '',
   priority: '',
   weight: '',
+  maxConcurrency: '',
   note: '',
   headersText: '',
   excludedModelsText: '',
